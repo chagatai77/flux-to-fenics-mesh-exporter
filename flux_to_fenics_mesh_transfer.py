@@ -214,11 +214,17 @@ def write_xml_file(nodes_xml, faces_xml, outputfile):
                 outfile.write(infile.read())
 
 def main():
+    
     inputfiles, outputfile = check_the_inputoutput_arguments(sys.argv[1:])
+
     node_element_file_cleaned, pattern2 = scrub_node_element_file(inputfiles)
+
     nodes_xml = retrieve_node_information(node_element_file_cleaned, pattern2)
+
     face_element_file_super_cleaned = scrub_face_element_file(inputfiles)
+
     faces_xml = retrieve_face_information(face_element_file_super_cleaned)
+
     write_xml_file(nodes_xml, faces_xml, outputfile)
 
 
