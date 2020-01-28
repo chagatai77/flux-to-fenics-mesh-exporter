@@ -73,22 +73,20 @@ def scrub_node_element_file(inputfiles):
     pattern2 = '*coordinates*'
     pattern3 = '*WEIGHT*'
 
-    with open(node_element_file_cleaned, 'w+') as cleaned:
-        # erase the contents of the file `cleaned`
-        cleaned.truncate(0)
-        with open(node_element_file, 'r') as node_info:
-            lines = node_info.readlines()
-            for i in range(0, len(lines)):
+    with open(node_element_file_cleaned, 'w') as cleaned: # open write-only
+        with open(node_element_file, 'r') as node_info:   # open read-only
+            lines = node_info.readlines() # read all the lines in the file
+            for i in range(0, len(lines)):# search through the read lines
                 # check for the patterns of text in the lines
                 if fnmatch(lines[i], pattern1):
                     # Node number info
                     cleaned.write(lines[i])
                 elif fnmatch(lines[i], pattern2):
                     # Node coordinate info
-                    cleaned.write(lines[i])
-                    cleaned.write(lines[i+1])
-                    cleaned.write(lines[i+2])
-                    cleaned.write(lines[i+3])
+                    cleaned.write(lines[i]) # Node number
+                    cleaned.write(lines[i+1]) # x-coordinate value
+                    cleaned.write(lines[i+2]) # y-coordinate value
+                    cleaned.write(lines[i+3]) # z-coordinate value
                 elif fnmatch(lines[i], pattern3):
                     # Node weight info
                     cleaned.write(lines[i])
@@ -120,19 +118,18 @@ def retrieve_node_information(node_element_file_cleaned, pattern2):
     #    of the node_list belongs to the node 1. The 1st element of the node_list
     #    belongs to the node 2, and so forth.
     notepad_file = 'notepadone.xml'
-    with open(notepad_file, 'w+') as notepad:
-        notepad.truncate(0)
+    with open(notepad_file, 'w') as notepad: # open write-only
         notepad.write("""<?xml version="1.0" encoding="UTF-8"?>
 
 <dolfin xmlns:dolfin="http://www.fenicsproject.org">
   <mesh celltype="triangle" dim="2">
     <vertices size="%d">
-""" % len(node_list))
-        for i in range(0, len(node_list)):
+""" % len(node_list)) # write the xml file header
+        for i in range(0, len(node_list)): # write xyz-coordinates of nodes
             notepad.write('      <vertex index="%d" x="%s" y="%s" z="%s"/>\n' \
             % (i, node_list[i][0], node_list[i][1], node_list[i][2]))
 
-        notepad.write('    </vertices>\n')
+        notepad.write('    </vertices>\n') # write the closing of vertices info
 
     # return the name of the xml file
     return notepad_file
@@ -148,12 +145,10 @@ def scrub_face_element_file(inputfiles):
     pattern5 = '*NODES*'
     pattern6 = '*TYPE*'
 
-    with open(face_element_file_cleaned, 'w+') as face_cleaned:
-        # erase the contents of the file `cleaned`
-        face_cleaned.truncate(0)
-        with open(face_element_file, 'r') as face_info:
-            face_lines = face_info.readlines()
-            for i in range(0, len(face_lines)):
+    with open(face_element_file_cleaned, 'w') as face_cleaned: # open write-only
+        with open(face_element_file, 'r') as face_info:        # open read-only
+            face_lines = face_info.readlines() # read all the lines in the file
+            for i in range(0, len(face_lines)):# search through the read lines
                 if fnmatch(face_lines[i], pattern4):
                     # Face element number info
                     face_cleaned.write(face_lines[i])
@@ -165,13 +160,10 @@ def scrub_face_element_file(inputfiles):
                     face_cleaned.write(face_lines[i])
 
     # further clean the face file
-
-    with open(face_element_file_super_cleaned, 'w+') as face_super_cleaned:
-        # erase the contents of the file `cleaned`
-        face_super_cleaned.truncate(0)
-        with open(face_element_file_cleaned, 'r') as face_info:
-            face_lines = face_info.readlines()
-            for i in range(0, len(face_lines)):
+    with open(face_element_file_super_cleaned, 'w') as face_super_cleaned: # open write-only
+        with open(face_element_file_cleaned, 'r') as face_info:            # open read-only
+            face_lines = face_info.readlines() # read all the lines in the file
+            for i in range(0, len(face_lines)):# search through the read lines
                 if fnmatch(face_lines[i], pattern5):
                     # Only retain node info of the face elements
                     face_super_cleaned.write(face_lines[i])
@@ -181,10 +173,10 @@ def scrub_face_element_file(inputfiles):
 def retrieve_face_information(face_element_file_super_cleaned):
     # collect the node numbers for each face elements
 
-    with open(face_element_file_super_cleaned, 'r') as face_super_cleaned:
-        lines = face_super_cleaned.readlines()
-        face_list = []
-        for i in range(0, len(lines)):
+    with open(face_element_file_super_cleaned, 'r') as face_super_cleaned: # open read-only
+        lines = face_super_cleaned.readlines() # read all the lines in the file
+        face_list = [] # initialize the face_list
+        for i in range(0, len(lines)): # append the node numbers to the face_list
             face_list = face_list + \
             [[str(int(lines[i].split(' ')[9].replace('(', '').replace(')', ''))-1), \
             str(int(lines[i].split(' ')[11].replace('(', '').replace(')', ''))-1), \
@@ -192,17 +184,15 @@ def retrieve_face_information(face_element_file_super_cleaned):
 
     # write the collected information on another xml file
     notepadtwo_file = 'notepadtwo.xml'
-
-    with open(notepadtwo_file, 'r+') as notepadtwo:
-        notepadtwo.truncate(0)
+    with open(notepadtwo_file, 'w') as notepadtwo: # open write-only
         notepadtwo.write('    <cells size="%d">\n' % len(face_list))
-        for i in range(0, len(face_list)):
+        for i in range(0, len(face_list)): # write the node numbers for each faces
             notepadtwo.write('      <triangle index="%d" v0="%s" v1="%s" v2="%s"/>\n' \
             % (i, face_list[i][0], face_list[i][1], face_list[i][2]))
 
         notepadtwo.write('    </cells>\n')
         notepadtwo.write('  </mesh>\n')
-        notepadtwo.write('</dolfin>\n')
+        notepadtwo.write('</dolfin>\n') # end of the xml file
 
     return notepadtwo_file
 
