@@ -120,13 +120,16 @@ def retrieve_node_information(node_element_file_cleaned, pattern2):
     return node_list
 
 def write_nodes(outputfile, node_list):
-    with open(outputfile, 'w') as notepad: # open write-only
-        notepad.write("""<?xml version="1.0" encoding="UTF-8"?>
+    # define the header of the xml file
+    xml_header = \
+    """<?xml version="1.0" encoding="UTF-8"?>
 
 <dolfin xmlns:dolfin="http://www.fenicsproject.org">
-  <mesh celltype="triangle" dim="2">
-    <vertices size="%d">
-""" % len(node_list)) # write the xml file header
+<mesh celltype="triangle" dim="2">
+<vertices size="%d">
+"""
+    with open(outputfile, 'w') as notepad: # open write-only
+        notepad.write(xml_header % len(node_list)) # write the xml file header
         for i in range(0, len(node_list)): # write xyz-coordinates of nodes
             notepad.write('      <vertex index="%d" x="%s" y="%s" z="%s"/>\n' \
             % (i, node_list[i][0], node_list[i][1], node_list[i][2]))
@@ -184,15 +187,20 @@ def retrieve_face_information(face_element_file_super_cleaned):
     return face_list
 
 def write_faces(outputfile, face_list):
+    # define the footer of the xml file
+    xml_footer = \
+    """    </cells>
+  </mesh>
+</dolfin>
+
+"""
     with open(outputfile, 'a') as notepadtwo: # open append-only
         notepadtwo.write('    <cells size="%d">\n' % len(face_list))
         for i in range(0, len(face_list)): # write the node numbers for each faces
             notepadtwo.write('      <triangle index="%d" v0="%s" v1="%s" v2="%s"/>\n' \
             % (i, face_list[i][0], face_list[i][1], face_list[i][2]))
 
-        notepadtwo.write('    </cells>\n')
-        notepadtwo.write('  </mesh>\n')
-        notepadtwo.write('</dolfin>\n') # end of the xml file
+        notepadtwo.write(xml_footer) # end of the xml file
 
 def main():
 
