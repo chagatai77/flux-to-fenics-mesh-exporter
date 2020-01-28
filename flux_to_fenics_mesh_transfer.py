@@ -23,8 +23,8 @@ mesh_output       : an xml file that this python script generates. This xml
 Import Python Libraries
 """
 
-import sys, getopt # for script I/O arguments detection
-from fnmatch import fnmatch     # for recognizing patterns in a string of characters
+import sys, getopt          # for script I/O arguments detection
+from fnmatch import fnmatch # for recognizing patterns in a string of characters
 
 """
 Function Definitions
@@ -214,7 +214,7 @@ def write_xml_file(nodes_xml, faces_xml, outputfile):
                 outfile.write(infile.read())
 
 def main():
-    
+
     inputfiles, outputfile = check_the_inputoutput_arguments(sys.argv[1:])
 
     node_element_file_cleaned, pattern2 = scrub_node_element_file(inputfiles)
