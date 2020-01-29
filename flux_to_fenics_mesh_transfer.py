@@ -1,4 +1,8 @@
-#!/usr/bin/env python3
+#! Flux2D 19.1
+#/usr/bin/env python3
+
+# the first one above is the shebang for the pyflux
+# the second one above is the shebang for normal python3
 
 """
 DOCSTRING
@@ -202,9 +206,33 @@ def write_faces(outputfile, face_list):
 
         notepadtwo.write(xml_footer) # end of the xml file
 
+def flux_commands():
+    # flux commands to export the node and face element info as txt files
+    # export node information into a txt file on the current folder
+    # export face information into a txt file on the current folder
+    # feed those two files as inputs to the check_the_inputoutput_arguments()
+    # commence with the normal operation of the remaining script
+
+    # define filenames
+    node_element_file = 'mesh-node-export-first-order.txt'
+    face_element_file = 'mesh-face-export-first-order.txt'
+    mesh_output = 'mesh.xml'
+
+    # Flux commands to export node, and face information into txt files
+    Node[ALL].exportTXT(txtFile=node_element_file, mode='replace')
+    FaceElement[ALL].exportTXT(txtFile=face_element_file, mode='replace')
+
+    inputfile = [node_element_file, face_element_file]
+
+    return inputfile, mesh_output
+
+
 def main():
 
-    inputfiles, outputfile = check_the_inputoutput_arguments(sys.argv[1:])
+    inputfiles, outputfile = flux_commands()
+
+    # following command is not used when script is called from flux terminal
+    # inputfiles, outputfile = check_the_inputoutput_arguments(sys.argv[1:])
 
     node_element_file_cleaned, pattern2 = scrub_node_element_file(inputfiles)
 
