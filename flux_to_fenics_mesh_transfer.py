@@ -74,7 +74,7 @@ def scrub_node_element_file(inputfiles):
 
     # define text patterns for the relevant node info
     pattern1 = '*Node*'
-    pattern2 = '*coordinates*'
+    pattern2 = '* coordinates *'
     pattern3 = '*WEIGHT*'
 
     with open(node_element_file_cleaned, 'w') as cleaned: # open write-only
