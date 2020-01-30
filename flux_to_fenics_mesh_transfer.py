@@ -229,10 +229,10 @@ def flux_commands():
 
 def main():
 
-    inputfiles, outputfile = flux_commands()
-
-    # following command is not used when script is called from flux terminal
-    # inputfiles, outputfile = check_the_inputoutput_arguments(sys.argv[1:])
+    if sys.argv == ['pydb.py']:
+        inputfiles, outputfile = flux_commands()
+    else:
+        inputfiles, outputfile = check_the_inputoutput_arguments(sys.argv[1:])
 
     node_element_file_cleaned, pattern2 = scrub_node_element_file(inputfiles)
 
