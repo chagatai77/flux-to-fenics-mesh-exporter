@@ -144,12 +144,14 @@ def scrub_face_element_file(inputfiles):
     # define filenames
     face_element_file = inputfiles[1]
     face_element_file_cleaned = 'face_element_file_cleaned.txt'
-    face_element_file_super_cleaned = 'face_element_file_super_cleaned.txt'
+    face_element_node_info = 'face_element_node_info.txt' # node information
+    face_element_face_info = 'face_element_face_info.txt' # face information
 
     # define text patterns for the relevant face info
     pattern4 = '*FaceElement*'
     pattern5 = '*NODES*'
     pattern6 = '*TYPE*'
+    pattern7 = '*LOC*'
 
     with open(face_element_file_cleaned, 'w') as face_cleaned: # open write-only
         with open(face_element_file, 'r') as face_info:        # open read-only
@@ -164,9 +166,12 @@ def scrub_face_element_file(inputfiles):
                 elif fnmatch(face_lines[i], pattern6):
                     # Face element type info
                     face_cleaned.write(face_lines[i])
+                elif fnmatch(face_lines[i], pattern7):
+                    # Face element LOC info
+                    face_cleaned.write(face_lines[i])
 
-    # further clean the face file
-    with open(face_element_file_super_cleaned, 'w') as face_super_cleaned: # open write-only
+    # further clean the face file for node numbers
+    with open(face_element_node_info, 'w') as face_super_cleaned: # open write-only
         with open(face_element_file_cleaned, 'r') as face_info:            # open read-only
             face_lines = face_info.readlines() # read all the lines in the file
             for i in range(0, len(face_lines)):# search through the read lines
@@ -174,12 +179,20 @@ def scrub_face_element_file(inputfiles):
                     # Only retain node info of the face elements
                     face_super_cleaned.write(face_lines[i])
 
-    return face_element_file_super_cleaned
+    # further clean the face file for Face geometric entities
+    with open(face_element_face_info, 'w') as face_super_cleaned: # open write-only
+        with open(face_element_file_cleaned, 'r') as face_info:   # open read-only
+            face_lines = face_info.readlines() # read all the lines in the file
+            for i in range(0, len(face_lines)):# search through the read lines
+                if fnmatch(face_lines[i], pattern7):
+                    # Only retain node info of the face elements
+                    face_super_cleaned.write(face_lines[i])
 
-def retrieve_face_information(face_element_file_super_cleaned):
+    return face_element_node_info, face_element_face_info
+
+def retrieve_face_information(face_element_node_info, face_element_face_info):
     # collect the node numbers for each face elements
-
-    with open(face_element_file_super_cleaned, 'r') as face_super_cleaned: # open read-only
+    with open(face_element_node_info, 'r') as face_super_cleaned: # open read-only
         lines = face_super_cleaned.readlines() # read all the lines in the file
         face_list = [] # initialize the face_list
         for i in range(0, len(lines)): # append the node numbers to the face_list
@@ -188,6 +201,15 @@ def retrieve_face_information(face_element_file_super_cleaned):
             str(int(lines[i].split(' ')[11].replace('(', '').replace(')', ''))-1), \
             str(int(lines[i].split(' ')[13].replace('(', '').replace(')', ''))-1)]]
 
+    # collect the Face geometric entity info for each face elements
+    with open(face_element_face_info, 'r') as face_super_cleaned: # open read-only
+        lines = face_super_cleaned.readlines() # read all the lines in the file
+        # append to the existing face_list as 4th dimension for each element
+        for i in range(0, len(lines)): # append the node numbers to the face_list
+            face_list[i] = face_list[i] + \
+            [lines[i].split(' ')[9].replace('(', '').replace(')', '')]
+
+    import pdb; pdb.set_trace()
     return face_list
 
 def write_faces(outputfile, face_list):
@@ -240,9 +262,9 @@ def main():
 
     write_nodes(outputfile, node_list)
 
-    face_element_file_super_cleaned = scrub_face_element_file(inputfiles)
+    face_element_node_info, face_element_face_info = scrub_face_element_file(inputfiles)
 
-    face_list = retrieve_face_information(face_element_file_super_cleaned)
+    face_list = retrieve_face_information(face_element_node_info, face_element_face_info)
 
     write_faces(outputfile, face_list)
 
