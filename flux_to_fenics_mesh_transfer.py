@@ -209,7 +209,6 @@ def retrieve_face_information(face_element_node_info, face_element_face_info):
             face_list[i] = face_list[i] + \
             [lines[i].split(' ')[9].replace('(', '').replace(')', '')]
 
-    import pdb; pdb.set_trace()
     return face_list
 
 def write_faces(outputfile, face_list):
@@ -228,6 +227,11 @@ def write_faces(outputfile, face_list):
 
         notepadtwo.write(xml_footer) # end of the xml file
 
+#def write_physical_region(face_list):
+    # write xml_header
+    # write face index physical property value
+
+
 def flux_commands():
     # flux commands to export the node and face element info as txt files
     # export node information into a txt file on the current folder
@@ -239,6 +243,7 @@ def flux_commands():
     node_element_file = 'mesh-node-export-first-order.txt'
     face_element_file = 'mesh-face-export-first-order.txt'
     mesh_output = 'mesh.xml'
+    face_physical_description='face_physical_description.txt'
 
     # Flux commands to export node, and face information into txt files
     Node[ALL].exportTXT(txtFile=node_element_file, mode='replace')
@@ -246,8 +251,20 @@ def flux_commands():
 
     inputfile = [node_element_file, face_element_file]
 
-    return inputfile, mesh_output
+    # create a text file describing the physical region names and the
+    #   corresponding geometric face entities
+    with open(face_physical_description, 'w') as face_description: # open append-only
+        i = 1
+        j = True
+        while j:
+            try:
+                face_description.write('Face (number) is : (face_region_name)'.\
+                format(number = i, face_region_name = Face[i].region.name))
+                i += 1
+            except:
+                j = False
 
+    return inputfile, mesh_output
 
 def main():
 
@@ -267,6 +284,8 @@ def main():
     face_list = retrieve_face_information(face_element_node_info, face_element_face_info)
 
     write_faces(outputfile, face_list)
+
+    #write_physical_region(face_list)
 
 """
 Run the Main Function
