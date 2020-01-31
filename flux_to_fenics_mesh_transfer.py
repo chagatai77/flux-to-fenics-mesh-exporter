@@ -227,9 +227,30 @@ def write_faces(outputfile, face_list):
 
         notepadtwo.write(xml_footer) # end of the xml file
 
-#def write_physical_region(face_list):
+def write_physical_region(face_list):
+    # define xml header
+    xml_header = \
+    """<?xml version="1.0" encoding="UTF-8"?>
+<dolfin xmlns:dolfin="http://fenicsproject.org">
+  <mesh_function type="uint" dim="2" size="%d">
+"""
+    # define xml footer
+    xml_footer = \
+    """  </mesh_function>
+</dolfin>
+"""
+    # create the xml file
+    physical_region_info = 'physical_region.xml'
     # write xml_header
-    # write face index physical property value
+    # write the face element indices and the corresponding physical region number code
+    with open(physical_region_info, 'w') as physical_region: # open write-only
+        physical_region.write(xml_header % len(face_list))
+        for i in range(0, len(face_list)): # write the node numbers for each faces
+            physical_region.write('      <entity index="%s" value="%s"/>\n' \
+            % (i, face_list[i][3]))
+
+    # write xml footer
+        physical_region.write(xml_footer) # end of the xml file
 
 
 def flux_commands():
@@ -287,7 +308,7 @@ def main():
 
     write_faces(outputfile, face_list)
 
-    #write_physical_region(face_list)
+    write_physical_region(face_list)
 
 """
 Run the Main Function
