@@ -253,13 +253,15 @@ def flux_commands():
 
     # create a text file describing the physical region names and the
     #   corresponding geometric face entities
-    with open(face_physical_description, 'w') as face_description: # open append-only
+    with open(face_physical_description, 'w') as face_description:
         i = 1
         j = True
         while j:
             try:
-                face_description.write('Face (number) is : (face_region_name)'.\
-                format(number = i, face_region_name = Face[i].region.name))
+                k = Face[i].region.name
+                face_description.write('Face %d is : ' % (i))
+                face_description.write(k)
+                face_description.write('\n')
                 i += 1
             except:
                 j = False
