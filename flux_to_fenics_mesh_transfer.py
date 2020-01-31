@@ -206,7 +206,6 @@ def retrieve_face_information(face_element_node_info, face_element_face_info):
         lines = face_super_cleaned.readlines() # read all the lines in the file
         # append to the existing face_list as 4th dimension for each element
         for i in range(0, len(lines)): # append the node numbers to the face_list
-            import pdb; pdb.set_trace()
             face_list[i] = face_list[i] + \
             [lines[i].split(' ')[9].replace('(', '').replace(')', '')]
 
