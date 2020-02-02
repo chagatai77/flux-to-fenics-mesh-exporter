@@ -5,8 +5,11 @@
 # the second one above is the shebang for normal python3
 
 """
-DOCSTRING
-==================
+FLUX TO FENICS MESH TRANSFER
+
+A python script for exporting the Flux mesh of a geometry into FEniCS.
+
+Written as part of the master's degree thesis work. Cagatay Eren, 2019 - 2020
 
 INPUTS============
 NODE_element_file : a txt file that's exported from FLUX. It specifies the
@@ -27,19 +30,39 @@ PHYSICAL_region   : an xml file that this python script generates. This xml
                     physical region characteristics in coded numbers.
 """
 
-"""
-Import Python Libraries
-"""
 
+# IMPORT PYTHON LIBRARIES
 import sys, getopt          # for script I/O arguments detection
 from fnmatch import fnmatch # for recognizing patterns in a string of characters
 
-"""
-Function Definitions
-"""
 
-def check_the_inputoutput_arguments(script_arguments):
-    # CHECK FOR I/O ARGUMENTS
+# DEFINE FUNCTIONS
+def check_inputoutput_arguments(script_arguments):
+    '''
+    Check for the input/output arguments of the script call.
+
+    The function is active when the python script is called from linux/windows
+        terminal. It parses the command line call for input filenames and the
+        output filenames. Input filenames are assumed to follow the `-i` flag,
+        and output filenames are assumed to follow `-o` flag. The `-h` flag
+        prints back a simple usage information.
+
+    Parameters
+    ----------
+    script_arguments : list
+        This is a list of strings which contain the user's specification for the
+        input/output filenames.
+
+    Returns
+    -------
+    inputfile : list
+        A list of strings which contains only the filenames given for `-i`
+        flag.
+
+    outputfile : list
+        A list of strings which contains only the filenames given for `-o`
+        flag.
+    '''
     # initialize the input and output filenames
     inputfile = []
     outputfile = []
@@ -260,7 +283,7 @@ def flux_commands():
     # flux commands to export the node and face element info as txt files
     # export node information into a txt file on the current folder
     # export face information into a txt file on the current folder
-    # feed those two files as inputs to the check_the_inputoutput_arguments()
+    # feed those two files as inputs to the check_inputoutput_arguments()
     # commence with the normal operation of the remaining script
 
     # define filenames
@@ -298,7 +321,7 @@ def main():
     if sys.argv == ['pydb.py']:
         inputfiles, outputfiles = flux_commands()
     else:
-        inputfiles, outputfiles = check_the_inputoutput_arguments(sys.argv[1:])
+        inputfiles, outputfiles = check_inputoutput_arguments(sys.argv[1:])
 
     node_element_file_cleaned, pattern2 = scrub_node_element_file(inputfiles)
 
@@ -312,9 +335,9 @@ def main():
 
     write_faces(outputfiles[0], face_list)
 
+    #
+
     write_physical_region(outputfiles[1] ,face_list)
 
-"""
-Run the Main Function
-"""
+# RUN MAIN
 main()
