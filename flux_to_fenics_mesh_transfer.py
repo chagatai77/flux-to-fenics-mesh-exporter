@@ -53,17 +53,17 @@ def check_inputoutput_arguments(script_arguments):
     ----------
     script_arguments : list
         This is a list of strings which contain the user's specification for the
-        input/output filenames.
+            input/output filenames.
 
     Returns
     -------
     inputfile : list
         A list of strings which contains only the filenames given for `-i`
-        flag.
+            flag.
 
     outputfile : list
         A list of strings which contains only the filenames given for `-o`
-        flag.
+            flag.
     '''
     # initialize the input and output filenames
     inputfile = []
@@ -159,31 +159,90 @@ def scrub_node_element_file(inputfiles):
     return node_element_file_cleaned, pattern2
 
 def retrieve_node_information(node_element_file_cleaned, pattern2):
-    # save the nodes in a list
-    # list's element order designate the node number
-    # in this sense:
-    #    0eth element of list is Node(1)
-    #    1st  element of list is Node(2)
-    #    2nd  element of list is Node(3)
-    #    ...  ................... .......
-    #    nth  element of list is Node(n+1)
+    '''
+    Retrieve and store the xyz-coordinates of individual nodes in a list.
+
+    The function receieves the cleaned node element file, and the `pattern2`.
+        Then, it creates the `node_list` for storing the xyz-coordinates of the
+        nodes. The function follows the following convention:
+            1) `node_list` element indices designate the node number:
+                0eth element of list is Node(1)
+                1st  element of list is Node(2)
+                2nd  element of list is Node(3)
+                ...  .................. .......
+                n-1  element of list is Node(n)
+                nth  element of list is Node(n+1)
+            2) Each element of `node_list` is also a list of 3 elements:
+                node_list == [[x-coord, y-coord, z-coord], --> Node (1)
+                              [x-coord, y-coord, z-coord], --> Node (2)
+                              [x-coord, y-coord, z-coord], --> Node (3)
+                              [x-coord, y-coord, z-coord], --> Node (4)
+                               ......., ......., ....... ,     .... ...
+                              [x-coord, y-coord, z-coord], --> Node (n-1)
+                              [x-coord, y-coord, z-coord], --> Node (n)
+                              ]
+                In this sense, len(node_list) equals to the total number of nodes
+                that Flux has created for a given geometry. However, since python
+                uses zero-index ordering, the zeroeth element of `node_list`
+                gives the xyz-coordinates for Node (1) of Flux mesh.
+
+    Parameters
+    ----------
+    node_element_file_cleaned : string
+        The name of the .txt file containing the simplified node information.
+
+    pattern2 : string
+        The pattern to parse for, in order to catch the lines detailing the
+            xyz-coordinates of the nodes.
+
+    Returns
+    -------
+    node_list : list
+        The list containing the xyz-coordinates of the nodes.
+    '''
     node_list = [] # initilize as an empty list
     with open(node_element_file_cleaned, 'r') as cleaned:
         lines = cleaned.readlines()
         for i in range(0, len(lines)):
             if fnmatch(lines[i], pattern2):
+                # parse the lines of the txt file
                 node_list = node_list + \
                 [[lines[i+1].replace(' ', '').replace('\n', '').replace('E','e'), \
                 lines[i+2].replace(' ', '').replace('\n', '').replace('E','e'), \
                 lines[i+3].replace(' ', '').replace('\n', '').replace('E','e')]]
 
-    # node_list contains the xyz-coordinates of the nodes.
-    # the node number is contained in the element indices. For example, 0th element
-    #    of the node_list belongs to the node 1. The 1st element of the node_list
-    #    belongs to the node 2, and so forth.
     return node_list
 
 def write_nodes(outputfile, node_list):
+    '''
+    Write the node number and their coordinates into an xml file.
+
+    The function takes the outputfile which is a string naming the xml file to
+        write the coordinates of the nodes into. Example: "mesh.xml". In writing
+        the xml file, the function follows a formatting that is identifiable in
+        FEniCS. `xml_header` contains the hardcoded info about the `celltype`
+        and the `dim`. Lastly, the `xml_header` contains the total number of
+        nodes, which is given in "<vertices size ="%d">". Here, the "%d"
+        placeholder allows for writing the total node number for different mesh
+        structures.
+
+    This function doesn't return any values. It only creates an xml file in the
+        working directory.
+
+    Parameters
+    ----------
+    outputfile : string
+        The name of the xml file to create.
+
+    node_list : list
+        The list containing the xyz-coordinates of the nodes.
+
+    Creates
+    -------
+    outputfile : .xml file
+        The first part of the xml file for the mesh, which contains the node
+            numbers and the node coordinates.
+    '''
     # define the header of the xml file
     xml_header = \
     """<?xml version="1.0" encoding="UTF-8"?>
@@ -201,6 +260,59 @@ def write_nodes(outputfile, node_list):
         notepad.write('    </vertices>\n') # write the closing of vertices info
 
 def scrub_face_element_file(inputfiles):
+    '''
+    Brush off the irrelevant information within the face element text file.
+
+    The function receives the inputfiles list. Picks the first element in that
+        list, and assumes it to be the name of the text file exported from Flux
+        detailing the face information. Then, the function creates another text
+        file for writing the relevant information of the nodes. These relevant
+        information are parsed according to `pattern4`, `pattern5`, `pattern6`
+        and `pattern7` as defined below.
+
+    Parameters
+    ----------
+    inputfiles : list
+        A list of strings containing the filenames of input files that the user
+            has provided to the script.
+
+    Returns
+    -------
+    face_element_node_info : string
+        The name of the txt file containing the node numbers for each faces.
+            "Face", in the context of Flux, is synonymous with "element" that
+            a mesh consists of. Nodes come together and define an element. Elements
+            come together and define a mesh.
+
+    face_element_face_info : string
+        The name of the txt file containing the physical face location of each
+            geometrical faces. "Geometrical face" means a single element of a
+            mesh. "Physical face" means a collection of geometrical faces which
+            have the common physical properties.
+
+    Creates
+    -------
+    face_element_file_cleaned : .txt file
+        A txt file containing the relevant parts of the given Flux txt file of
+            faces.
+
+    face_element_node_info : .txt file
+        A txt file containing only the nodes of a given face element. The line
+            numbers of this text file also encode the face number information.
+            In this sense, the first line of this text file contains the node
+            numbers of the face element (1). Second line of this text file
+            contains the node numbers of the face element (2). And so on.
+
+    face_element_face_info : .txt file
+        A txt file containing only the physical region information of a given
+            face element. Here, the numbers that are visible on each line,
+            (1, 2, 3, ... and so on) encode the physical region information
+            of a given face. The line numbers of this text file also encode the
+            face number information. In this sense, the first line of this text
+            file contains the node numbers of the face element (1). Second line
+            of this text file contains the node numbers of the face element (2).
+            And so on.
+    '''
     # define filenames
     face_element_file = inputfiles[1]
     face_element_file_cleaned = 'face_element_file_cleaned.txt'
@@ -251,6 +363,41 @@ def scrub_face_element_file(inputfiles):
     return face_element_node_info, face_element_face_info
 
 def retrieve_face_information(face_element_node_info, face_element_face_info):
+    '''
+    Retrieve and store the node numbers and physical numbers of elements in a list.
+
+    This function reads the lines of the face_element_node_info and face_element_face_info
+        files and parses those lines for the node numbers of a given face element,
+        and its physical region number.
+
+    `face_list` == [[node1, node2, node3, physical-region-number], --> Face (1)
+                    [node1, node2, node3, physical-region-number], --> Face (2)
+                    [node1, node2, node3, physical-region-number], --> Face (3)
+                    ......, ....., ....., .......................,     .... ...
+                    [node1, node2, node3, physical-region-number], --> Face (n-1)
+                    [node1, node2, node3, physical-region-number], --> Face (n)
+                    ]
+
+    Parameters
+    ----------
+    face_element_node_info : string
+        The name of the txt file containing the node numbers for each faces.
+            "Face", in the context of Flux, is synonymous with "element" that
+            a mesh consists of. Nodes come together and define an element. Elements
+            come together and define a mesh.
+
+    face_element_face_info : string
+        The name of the txt file containing the physical face location of each
+            geometrical faces. "Geometrical face" means a single element of a
+            mesh. "Physical face" means a collection of geometrical faces which
+            have the common physical properties.
+
+    Returns
+    -------
+    face_list : list
+        The list containing the nodes of a face element, and physical region
+            number of a face element.
+    '''
     # collect the node numbers for each face elements
     with open(face_element_node_info, 'r') as face_super_cleaned: # open read-only
         lines = face_super_cleaned.readlines() # read all the lines in the file
@@ -272,6 +419,26 @@ def retrieve_face_information(face_element_node_info, face_element_face_info):
     return face_list
 
 def write_faces(outputfile, face_list):
+    '''
+    Write the face number and their node numbers into an xml file.
+
+    The function appends the information contained in `face_list` into the same
+        xml file containing the node coordinate information. Example: "mesh.xml".
+        In writing the xml file, the function follows a formatting that is identifiable
+        in FEniCS.
+
+    This function doesn't return any values. It only appends to an xml file in the
+        working directory.
+
+    Parameters
+    ----------
+    outputfile : list
+        The name of the xml file to append.
+
+    face_list : list
+        The list containing the nodes of a face element, and physical region
+            number of a face element.
+    '''
     # define the footer of the xml file
     xml_footer = \
     """    </cells>
@@ -288,6 +455,27 @@ def write_faces(outputfile, face_list):
         notepadtwo.write(xml_footer) # end of the xml file
 
 def write_physical_region(outputfile ,face_list):
+    '''
+    Write the face number and their phyical region numbers into an xml file.
+
+    This function doesn't return any values. It only writes to an xml file in the
+        working directory.
+
+    Parameters
+    ----------
+    outputfile : list
+        The name of the xml file to write into.
+
+    face_list : list
+        The list containing the nodes of a face element, and physical region
+            number of a face element.
+
+    Creates
+    -------
+    outputfile : .xml file
+        The xml file, which contains the face numbers and their corresponding
+            physical region numbers.
+    '''
     # define xml header
     xml_header = \
     """<?xml version="1.0" encoding="UTF-8"?>
@@ -313,12 +501,40 @@ def write_physical_region(outputfile ,face_list):
 
 
 def flux_commands():
-    # flux commands to export the node and face element info as txt files
-    # export node information into a txt file on the current folder
-    # export face information into a txt file on the current folder
-    # feed those two files as inputs to the check_inputoutput_arguments()
-    # commence with the normal operation of the remaining script
+    '''
+    Commands that are executed when the script is executed within Flux.
 
+    Following commands specify the .txt and .xml filenames for the script, for
+        future use by other function within the script. Further, the commands
+        below export all node and face element information into a txt file in the
+        working directory. Lastly, it compiles the names of different physical
+        faces in the given Flux geometry.
+
+    Returns
+    -------
+    inputfile : list
+        A list of strings which contains only the filenames that the script
+            will use to read informaion from.
+
+    outputfile : list
+        A list of strings which contains only the filenames that the script
+            will use to write information into.
+
+    Creates
+    -------
+    node_element_file : .txt file
+        A txt file exported from Flux containing the various information about
+            the nodes in a given Flux geometry.
+
+    face_element_file : .txt file
+        A txt file exported from Flux containing the various information about
+            the faces in a given Flux geometry.
+
+    face_physical_description : .txt file
+        A txt file containing the names of the various physical regions in a
+            given Flux geometry.
+
+    '''
     # define filenames
     node_element_file = 'mesh-node-export-first-order.txt'
     face_element_file = 'mesh-face-export-first-order.txt'
@@ -350,6 +566,12 @@ def flux_commands():
     return inputfile, outputfile
 
 def main():
+    '''
+    The main function calling all the other functions.
+
+    The first if-else block below checks for whether the script is being called
+        from a linux/windows terminal, or from within the Flux.
+    '''
 
     if sys.argv == ['pydb.py']:
         inputfiles, outputfiles = flux_commands()
