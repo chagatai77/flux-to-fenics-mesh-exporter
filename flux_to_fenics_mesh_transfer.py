@@ -4,6 +4,8 @@
 # the first one above is the shebang for the pyflux
 # the second one above is the shebang for normal python3
 
+# Attention! pyflux uses python2.7
+
 """
 FLUX TO FENICS MESH TRANSFER
 
@@ -95,6 +97,37 @@ input file missing!")
     return inputfile, outputfile
 
 def scrub_node_element_file(inputfiles):
+    '''
+    Brush off the irrelevant information within the node element text file.
+
+    The function receives the inputfiles list. Picks the zeroeth element in that
+        list, and assumes it to be the name of the text file exported from Flux
+        detailing the node information. Then, the function creates another text
+        file for writing the relevant information of the nodes. These relevant
+        information are parsed according to `pattern1`, `pattern2` and `pattern3`
+        as defined below.
+
+    Parameters
+    ----------
+    inputfiles : list
+        A list of strings containing the filenames of input files that the user
+            has provided to the script.
+
+    Returns
+    -------
+    node_element_file_cleaned : string
+        The name of the .txt file that the function has used to write the
+            important information as parsed by `pattern1`, `pattern2` and
+            `pattern3`.
+
+    pattern2 : string
+        The string for parsing the coordinate information of the nodes.
+
+    Creates
+    -------
+    node_element_file_cleaned : .txt file
+        A .txt file containing the simplified version of the node_element_file.
+    '''
     # define filenames
     node_element_file = inputfiles[0]
     node_element_file_cleaned = 'node_element_file_cleaned.txt'
@@ -122,7 +155,7 @@ def scrub_node_element_file(inputfiles):
                     # Node weight info
                     cleaned.write(lines[i])
 
-    # return the name of the cleaned node info file
+    # return the name of the cleaned node info file and pattern2
     return node_element_file_cleaned, pattern2
 
 def retrieve_node_information(node_element_file_cleaned, pattern2):
