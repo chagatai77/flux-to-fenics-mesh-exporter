@@ -21,6 +21,10 @@ FACE_element_file : a txt file that's exported from FLUX. It specifies the
                     face element number, the nodes making up the face element,
                     and the type of the face element.
 
+FACE_physical_description : a txt file that's exported from FLUX. It specifies
+                            the names assigned by user to the geometrical faces
+                            of the geometry.
+
 OUTPUTS===========
 MESH_output       : an xml file that this python script generates. This xml
                     file contains the node and element information of the mesh
@@ -79,7 +83,8 @@ input file missing!")
         if opt == '-h':
             # display help
             sys.exit('flux_to_fenics_mesh_transfer.py -i <NODE_element_file> -i \
-<FACE_element_file> -o <MESH_output> -o <PHYSICAL_region>')
+<FACE_element_file> -i <FACE_physical_description> -o <MESH_output> -o \
+<PHYSICAL_region>')
         elif opt in ("-i", "--ifile"):
             # store input filename
             inputfile.append(arg)
@@ -362,7 +367,7 @@ def scrub_face_element_file(inputfiles):
 
     return face_element_node_info, face_element_face_info
 
-def retrieve_face_information(face_element_node_info, face_element_face_info):
+def retrieve_face_information(face_element_node_info, face_element_face_info, face_physical_description):
     '''
     Retrieve and store the node numbers and physical numbers of elements in a list.
 
@@ -392,6 +397,8 @@ def retrieve_face_information(face_element_node_info, face_element_face_info):
             mesh. "Physical face" means a collection of geometrical faces which
             have the common physical properties.
 
+    face_physical_description : string
+
     Returns
     -------
     face_list : list
@@ -415,6 +422,28 @@ def retrieve_face_information(face_element_node_info, face_element_face_info):
         for i in range(0, len(lines)): # append the node numbers to the face_list
             face_list[i] = face_list[i] + \
             [lines[i].split(' ')[9].replace('(', '').replace(')', '')]
+
+    # replace the physical number codes with their reduced equivalents
+    with open(face_physical_description, 'r') as physical_description: # open read-only
+        lines = physical_description.readlines() # read all the lines in the file
+        face_info = [] # collect face names
+        for i in range(0, len(lines)):
+            face_info = face_info + [lines[i].split(' ')[4].replace('\n', '')]
+
+    face_unique_info = [] # collect unique face names
+                              # and preserve occurrence order
+    for face in face_info:
+        if face not in face_unique_info:
+            face_unique_info.append(face)
+
+    for face in face_info:
+        for index, s in enumerate(face_unique_info):
+            if face == s:
+                face_info[face_info.index(face)] = [index+1, face]
+
+    # now update the face_list's physical-region-number according to face_info
+    for element in face_list:
+        element[3] = face_info[int(element[3])-1][0]
 
     return face_list
 
@@ -539,15 +568,13 @@ def flux_commands():
     node_element_file = 'mesh-node-export-first-order.txt'
     face_element_file = 'mesh-face-export-first-order.txt'
     mesh_output = 'mesh.xml'
-    face_physical_description='face_physical_description.txt'
+    face_physical_description='face-physical-description.txt'
     physical_region = 'physical_region.xml'
 
     # Flux commands to export node, and face information into txt files
     Node[ALL].exportTXT(txtFile=node_element_file, mode='replace')
     FaceElement[ALL].exportTXT(txtFile=face_element_file, mode='replace')
 
-    inputfile = [node_element_file, face_element_file]
-    outputfile = [mesh_output, physical_region]
     # create a text file describing the physical region names and the
     #   corresponding geometric face entities
     with open(face_physical_description, 'w') as face_description:
@@ -562,6 +589,9 @@ def flux_commands():
                 i += 1
             except:
                 j = False
+
+    inputfile = [node_element_file, face_element_file, face_physical_description]
+    outputfile = [mesh_output, physical_region]
 
     return inputfile, outputfile
 
@@ -586,11 +616,10 @@ def main():
 
     face_element_node_info, face_element_face_info = scrub_face_element_file(inputfiles)
 
-    face_list = retrieve_face_information(face_element_node_info, face_element_face_info)
+    face_list = retrieve_face_information(face_element_node_info, face_element_face_info, \
+inputfiles[2])
 
     write_faces(outputfiles[0], face_list)
-
-    #
 
     write_physical_region(outputfiles[1] ,face_list)
 
