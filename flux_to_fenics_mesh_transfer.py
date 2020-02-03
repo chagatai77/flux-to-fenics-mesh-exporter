@@ -404,7 +404,14 @@ def retrieve_face_information(face_element_node_info, face_element_face_info, fa
     face_list : list
         The list containing the nodes of a face element, and physical region
             number of a face element.
+
+    Creates
+    -------
+    face_number_reference : .txt file
     '''
+
+    face_number_reference = 'face_number_reference.txt'
+
     # collect the node numbers for each face elements
     with open(face_element_node_info, 'r') as face_super_cleaned: # open read-only
         lines = face_super_cleaned.readlines() # read all the lines in the file
@@ -444,6 +451,12 @@ def retrieve_face_information(face_element_node_info, face_element_face_info, fa
     # now update the face_list's physical-region-number according to face_info
     for element in face_list:
         element[3] = face_info[int(element[3])-1][0]
+
+    # write face_unique_info into a txt file for user's reference
+    with open(face_number_reference, 'w') as face_ref: # open write-only
+        for index, s in enumerate(face_unique_info):
+            write_string = str(index+1) + ' ' + (s) + '\n'
+            face_ref.write(write_string)
 
     return face_list
 
