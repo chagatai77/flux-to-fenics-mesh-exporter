@@ -408,6 +408,10 @@ def retrieve_face_information(face_element_node_info, face_element_face_info, fa
     Creates
     -------
     face_number_reference : .txt file
+        A txt file containing the name of the physical regions as defined by the
+            Flux user, corresponding to each number. This txt file can be used
+            for reference during the import process into FEniCS and setting up
+            the finite element problem.
     '''
 
     face_number_reference = 'face_number_reference.txt'
